@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.svg',
   },
+  metadataBase: new URL('https://appwrite-schema-viewer.appwrite.network/'),
   openGraph: {
     type: 'website',
     title: 'Appwrite Schema Viewer',
