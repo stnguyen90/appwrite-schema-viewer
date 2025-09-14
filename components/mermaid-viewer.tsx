@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Copy, Download, Code, Eye, ZoomIn, ZoomOut, Database } from "lucide-react"
+import { Copy, Download, Code, ZoomIn, ZoomOut, Database, LayoutDashboard } from "lucide-react"
 import { useTheme } from "next-themes"
 import {
   Select,
@@ -11,6 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group"
 
 interface MermaidViewerProps {
   jsonConfig: string
@@ -37,33 +41,65 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
   const isDragging = useRef(false)
   const lastPosition = useRef({ x: 0, y: 0 })
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleStart = (x: number, y: number) => {
     isDragging.current = true
-    lastPosition.current = { x: e.clientX, y: e.clientY }
+    lastPosition.current = { x, y }
     if (contentRef.current) {
       contentRef.current.style.cursor = 'grabbing'
     }
   }
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMove = (x: number, y: number) => {
     if (!isDragging.current) return
 
-    const dx = e.clientX - lastPosition.current.x
-    const dy = e.clientY - lastPosition.current.y
+    const dx = x - lastPosition.current.x
+    const dy = y - lastPosition.current.y
 
     setPosition(prev => ({
       x: prev.x + dx,
       y: prev.y + dy
     }))
 
-    lastPosition.current = { x: e.clientX, y: e.clientY }
+    lastPosition.current = { x, y }
   }
 
-  const handleMouseUp = () => {
+  const handleEnd = () => {
     isDragging.current = false
     if (contentRef.current) {
       contentRef.current.style.cursor = 'grab'
     }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    handleStart(e.clientX, e.clientY)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    handleMove(e.clientX, e.clientY)
+  }
+
+  const handleMouseUp = () => {
+    handleEnd()
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      handleStart(touch.clientX, touch.clientY)
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      handleMove(touch.clientX, touch.clientY)
+      // Prevent scrolling while dragging
+      e.preventDefault()
+    }
+  }
+
+  const handleTouchEnd = () => {
+    handleEnd()
   }
 
   const resetView = () => {
@@ -250,16 +286,16 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
 
   return (
     <div className="h-full flex flex-col">
-      <div className="border-b px-4 h-[45px] flex items-center bg-muted/50">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-4">
+      <div className="border-b px-4 py-2 flex flex-col sm:flex-row sm:h-[45px] gap-2 sm:gap-0 items-start sm:items-center bg-muted/50">
+        <div className="flex w-full justify-between sm:items-center gap-2 sm:gap-4">
+          <div>
             <h2 className="font-semibold sr-only">{viewMode === "diagram" ? "Entity Relationship Diagram" : "Mermaid Source"}</h2>
             {databases.length > 0 && (
               <Select
                 value={selectedDatabase || undefined}
                 onValueChange={setSelectedDatabase}
               >
-                <SelectTrigger className="h-8 w-[200px] gap-1">
+                <SelectTrigger className="h-8 w-full sm:w-[200px] gap-1">
                   <Database className="w-4 h-4" />
                   <SelectValue placeholder="Select database" />
                 </SelectTrigger>
@@ -272,29 +308,25 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
                 </SelectContent>
               </Select>
             )}
-            <Button
-              variant={viewMode === "diagram" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("diagram")}
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Diagram
-            </Button>
-            <Button
-              variant={viewMode === "source" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("source")}
-            >
-              <Code className="w-4 h-4 mr-2" />
-              Source
-            </Button>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={copyToClipboard} disabled={!mermaidSource}>
+          <div className="flex">
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as "diagram" | "source")} className="h-8">
+              <ToggleGroupItem value="diagram" aria-label="Show diagram view">
+                <LayoutDashboard className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Diagram</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="source" aria-label="Show source view">
+                <Code className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Source</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button variant="ghost" size="icon" onClick={copyToClipboard} disabled={!mermaidSource} className="h-8 w-8">
               <Copy className="w-4 h-4" />
+              <span className="sr-only">Copy</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={downloadSource} disabled={!mermaidSource}>
+            <Button variant="ghost" size="icon" onClick={downloadSource} disabled={!mermaidSource} className="h-8 w-8">
               <Download className="w-4 h-4" />
+              <span className="sr-only">Download</span>
             </Button>
           </div>
         </div>
@@ -313,18 +345,18 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
             className="relative w-full h-full overflow-hidden"
           >
             {viewMode === "diagram" && (
-              <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-2 items-center bg-background/80 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+              <div className="absolute right-4 bottom-4 z-10 flex flex-row sm:flex-col gap-2 items-center bg-background/80 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setScale(prev => Math.min(4, prev + 0.1))
+                    setScale(prev => Math.min(4, prev + 0.2))
                     setPosition(prev => ({
-                      x: prev.x - (contentRef.current?.clientWidth || 0) * 0.05,
-                      y: prev.y - (contentRef.current?.clientHeight || 0) * 0.05
+                      x: prev.x - (contentRef.current?.clientWidth || 0) * 0.1,
+                      y: prev.y - (contentRef.current?.clientHeight || 0) * 0.1
                     }))
                   }}
-                  className="px-2"
+                  className="p-2 sm:px-2"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </Button>
@@ -335,13 +367,13 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setScale(prev => Math.max(0.1, prev - 0.1))
+                    setScale(prev => Math.max(0.1, prev - 0.2))
                     setPosition(prev => ({
-                      x: prev.x + (contentRef.current?.clientWidth || 0) * 0.05,
-                      y: prev.y + (contentRef.current?.clientHeight || 0) * 0.05
+                      x: prev.x + (contentRef.current?.clientWidth || 0) * 0.1,
+                      y: prev.y + (contentRef.current?.clientHeight || 0) * 0.1
                     }))
                   }}
-                  className="px-2"
+                  className="p-2 sm:px-2"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </Button>
@@ -350,7 +382,7 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
                   variant="ghost"
                   size="sm"
                   onClick={resetView}
-                  className="text-xs px-2"
+                  className="text-xs p-2"
                 >
                   Reset
                 </Button>
@@ -367,6 +399,10 @@ export function MermaidViewer({ jsonConfig, viewMode, setViewMode }: MermaidView
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
             >
               <div ref={diagramRef} className="p-4">
                 {!mermaidSource && <p className="text-muted-foreground">Loading diagram...</p>}

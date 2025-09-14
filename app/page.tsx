@@ -4,9 +4,8 @@ import { useState } from "react"
 import { JsonEditor } from "@/components/json-editor"
 import { MermaidViewer } from "@/components/mermaid-viewer"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Code, Eye } from "lucide-react"
+import { Eye, Pencil } from "lucide-react"
 
 const defaultAppwriteConfig = {
   projectId: "<PROJECT_ID>",
@@ -137,12 +136,11 @@ const defaultAppwriteConfig = {
 export default function Home() {
   const [jsonConfig, setJsonConfig] = useState(JSON.stringify(defaultAppwriteConfig, null, 2))
   const [viewMode, setViewMode] = useState<"diagram" | "source">("diagram")
-  const [mobilePanel, setMobilePanel] = useState<"editor" | "viewer">("editor")
-  const isMobile = useIsMobile()
+  const [mobilePanel, setMobilePanel] = useState<"editor" | "viewer">("viewer")
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="border-b bg-background px-6 py-4">
+      <header className="border-b bg-background px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -150,69 +148,48 @@ export default function Home() {
               alt="Logo"
               className="w-8 h-8 dark:invert"
             />
-            <h1 className={`text-2xl font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+            <h1 className={`font-bold text-lg sm:hidden`}>
+              ASV
+            </h1>
+            <h1 className={`font-bold text-2xl hidden sm:inline`}>
               Appwrite Schema Viewer
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            {isMobile && (
-              <ToggleGroup
-                type="single"
-                value={mobilePanel}
-                onValueChange={(value) => value && setMobilePanel(value as "editor" | "viewer")}
-                variant="outline"
-                size="sm"
-                aria-label="Switch between JSON Editor and Schema Viewer"
-              >
-                <ToggleGroupItem value="editor" aria-label="Show JSON Editor">
-                  <Code className="h-4 w-4" />
-                  <span className="ml-1 hidden sm:inline">Editor</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="viewer" aria-label="Show Schema Viewer">
-                  <Eye className="h-4 w-4" />
-                  <span className="ml-1 hidden sm:inline">Viewer</span>
-                </ToggleGroupItem>
-              </ToggleGroup>
-            )}
+            <ToggleGroup
+              className="sm:hidden"
+              type="single"
+              value={mobilePanel}
+              onValueChange={(value) => value && setMobilePanel(value as "editor" | "viewer")}
+              variant="outline"
+              size="sm"
+              aria-label="Switch between JSON Editor and Schema Viewer"
+            >
+              <ToggleGroupItem value="editor" aria-label="Show JSON Editor">
+                <Pencil className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">Editor</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="viewer" aria-label="Show Schema Viewer">
+                <Eye className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">Viewer</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        {isMobile ? (
-          // Mobile layout: show only one panel at a time with smooth transitions
-          <div className="w-full transition-all duration-300 ease-in-out">
-            {mobilePanel === "editor" && (
-              <div className="w-full animate-fade-in">
-                <JsonEditor value={jsonConfig} onChange={setJsonConfig} />
-              </div>
-            )}
-            {mobilePanel === "viewer" && (
-              <div className="w-full overflow-auto animate-fade-in">
-                <MermaidViewer 
-                  jsonConfig={jsonConfig} 
-                  viewMode={viewMode} 
-                  setViewMode={setViewMode}
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          // Desktop layout: show both panels side by side
-          <>
-            <div className="w-1/2 border-r">
-              <JsonEditor value={jsonConfig} onChange={setJsonConfig} />
-            </div>
-            <div className="w-1/2 overflow-auto">
-              <MermaidViewer 
-                jsonConfig={jsonConfig} 
-                viewMode={viewMode} 
-                setViewMode={setViewMode}
-              />
-            </div>
-          </>
-        )}
+      <div className="flex-1 flex overflow-hidden w-full transition-all duration-300 ease-in-out">
+        <div className={`${mobilePanel === "editor" ? "block" : "hidden"} w-full sm:block sm:w-1/2 h-full animate-fade-in border-r`}>
+          <JsonEditor value={jsonConfig} onChange={setJsonConfig} />
+        </div>
+        <div className={`${mobilePanel === "viewer" ? "block" : "hidden"} w-full sm:block sm:w-1/2 h-full overflow-auto animate-fade-in`}>
+          <MermaidViewer
+            jsonConfig={jsonConfig}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
+        </div>
       </div>
     </div>
   )
