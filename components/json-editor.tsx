@@ -10,15 +10,6 @@ interface JsonEditorProps {
 }
 
 export function JsonEditor({ value, onChange }: JsonEditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px"
-    }
-  }, [value])
-
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value)
   }
@@ -45,9 +36,9 @@ export function JsonEditor({ value, onChange }: JsonEditorProps) {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto h-full">
         <textarea
-          ref={textareaRef}
+          name="json-editor"
           value={value}
           onChange={handleChange}
           className="w-full h-full p-4 font-mono text-sm bg-background border-0 resize-none focus:outline-none focus:ring-0"
