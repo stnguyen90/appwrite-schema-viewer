@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useRef } from "react"
+import Editor from "@monaco-editor/react"
+import { useTheme } from "next-themes"
 
 interface JsonEditorProps {
   value: string
@@ -10,10 +9,7 @@ interface JsonEditorProps {
 }
 
 export function JsonEditor({ value, onChange }: JsonEditorProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(e.target.value)
-  }
-
+  const { theme } = useTheme()
   const formatJson = () => {
     try {
       const parsed = JSON.parse(value)
@@ -21,6 +17,10 @@ export function JsonEditor({ value, onChange }: JsonEditorProps) {
     } catch (error) {
       // Invalid JSON, don't format
     }
+  }
+
+  const handleEditorChange = (value: string | undefined) => {
+    onChange(value || "")
   }
 
   return (
@@ -36,14 +36,23 @@ export function JsonEditor({ value, onChange }: JsonEditorProps) {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto h-full">
-        <textarea
-          name="json-editor"
+      <div className="flex-1 overflow-hidden">
+        <Editor
+          height="100%"
+          defaultLanguage="json"
           value={value}
-          onChange={handleChange}
-          className="w-full h-full p-4 font-mono text-sm bg-background border-0 resize-none focus:outline-none focus:ring-0"
-          placeholder="Enter your Appwrite configuration..."
-          spellCheck={false}
+          onChange={handleEditorChange}
+          theme={theme === "dark" ? "vs-dark" : "light"}
+          options={{
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            tabSize: 2,
+            wordWrap: "on",
+            formatOnPaste: true,
+            formatOnType: true,
+            automaticLayout: true,
+          }}
         />
       </div>
     </div>
